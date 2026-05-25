@@ -24,7 +24,10 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -1085,7 +1088,9 @@ fun ChatBubble(sender: String, message: String, isUser: Boolean) {
     val txtHeader = if (isUser) "SIR" else if (sender == "jarvis_vision") "J.A.R.V.I.S [VISION CORE]" else "J.A.R.V.I.S."
 
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .focusable(),
         horizontalAlignment = alignFloat
     ) {
         Text(
@@ -1253,21 +1258,23 @@ fun JarvisVisionScreen(viewModel: JarvisViewModel) {
                     .padding(14.dp)
             ) {
                 item {
-                    Text(
-                        text = "SCANNER READOUT STREAM",
-                        color = JarvisAccentPurple,
-                        fontSize = 10.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 6.dp)
-                    )
-                    Text(
-                        text = scanResult ?: "SIR, PRESS SCAN PROTOCOL BELOW OR TRANSFER CHIP CORES FOR HIGH-DENSITY SCAN ANALYSIS.",
-                        color = JarvisTextHigh,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        lineHeight = 16.sp
-                    )
+                    Column(modifier = Modifier.focusable()) {
+                        Text(
+                            text = "SCANNER READOUT STREAM",
+                            color = JarvisAccentPurple,
+                            fontSize = 10.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
+                        Text(
+                            text = scanResult ?: "SIR, PRESS SCAN PROTOCOL BELOW OR TRANSFER CHIP CORES FOR HIGH-DENSITY SCAN ANALYSIS.",
+                            color = JarvisTextHigh,
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            lineHeight = 16.sp
+                        )
+                    }
                 }
             }
         }
@@ -1637,19 +1644,23 @@ fun JarvisSettingsScreen(viewModel: JarvisViewModel) {
 
                     overrideOptions.forEach { (modeOption, label) ->
                         val isSelected = currentOverride == modeOption
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val isFocused by interactionSource.collectIsFocusedAsState()
+
                         Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .background(
-                                    color = if (isSelected) JarvisPrimaryCyan.copy(alpha = 0.15f) else Color.Transparent,
+                                    color = if (isSelected) JarvisPrimaryCyan.copy(alpha = 0.15f) else if (isFocused) JarvisPrimaryCyan.copy(alpha = 0.05f) else Color.Transparent,
                                     shape = RoundedCornerShape(8.dp)
                                 )
                                 .border(
-                                    width = 1.dp,
-                                    color = if (isSelected) JarvisPrimaryCyan else JarvisPrimaryCyan.copy(alpha = 0.12f),
+                                    width = if (isFocused) 2.dp else 1.dp,
+                                    color = if (isFocused) JarvisPrimaryCyan else if (isSelected) JarvisPrimaryCyan else JarvisPrimaryCyan.copy(alpha = 0.12f),
                                     shape = RoundedCornerShape(8.dp)
                                 )
-                                .clickable {
+                                .focusable(interactionSource = interactionSource)
+                                .clickable(interactionSource = interactionSource, indication = androidx.compose.foundation.LocalIndication.current) {
                                     JarvisThemeEngine.setThemingMode(context, modeOption)
                                 }
                                 .padding(vertical = 10.dp),
